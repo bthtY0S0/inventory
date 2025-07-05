@@ -49,7 +49,9 @@ const inventoryRoutes = require('./routes/centralInventoryRoutes');
 
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/inventory', inventoryRoutes);
-
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/upload.html'));
+});
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
   dbName: 'InventorySystem',
