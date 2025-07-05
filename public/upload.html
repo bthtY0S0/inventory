@@ -2,20 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SmartInventory</title>
   <style>
     body {
       font-family: sans-serif;
       padding: 2rem;
-      background: #f5f5f5;
+      background: #f4f4f4;
     }
-    h1 {
-      margin-bottom: 1rem;
+    #uploadBtn {
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
     }
-    button, input[type="file"] {
-      margin-top: 0.5rem;
-      padding: 0.5rem 1rem;
+    #uploadBtn:hover {
+      background: #0056b3;
     }
     #result {
       margin-top: 2rem;
@@ -27,61 +31,50 @@
   </style>
 </head>
 <body>
+
   <h1>SmartInventory</h1>
 
-  <form id="uploadForm" enctype="multipart/form-data">
-    <label><strong>Upload CSV file</strong></label><br>
-    <input type="file" name="file" id="csvFile" accept=".csv" required />
-    <br>
-    <button type="submit">Upload</button>
-  </form>
+  <!-- Hidden file input -->
+  <input type="file" id="fileInput" accept=".csv" style="display: none;" />
 
-  <br><br>
-
-  <button id="reportBtn">Get Inventory Report</button>
+  <!-- Visible custom button -->
+  <button id="uploadBtn">Upload CSV</button>
 
   <div id="result"></div>
 
   <script>
-    const uploadForm = document.getElementById('uploadForm');
-    const csvFileInput = document.getElementById('csvFile');
-    const reportBtn = document.getElementById('reportBtn');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
     const resultDiv = document.getElementById('result');
 
-    uploadForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const file = csvFileInput.files[0];
+    // Trigger file picker when button is clicked
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // Automatically upload when a file is selected
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
       const formData = new FormData();
       formData.append('file', file);
-
       resultDiv.textContent = 'Uploading...';
 
       try {
         const res = await fetch('/api/receipts/upload', {
           method: 'POST',
-          body: formData,
+          body: formData
         });
         const data = await res.json();
         resultDiv.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
-        resultDiv.textContent = 'Error uploading file.';
-        console.error(err);
-      }
-    });
-
-    reportBtn.addEventListener('click', async () => {
-      resultDiv.textContent = 'Loading report...';
-
-      try {
-        const res = await fetch('/api/inventory/export');
-        const data = await res.json();
-        resultDiv.textContent = JSON.stringify(data, null, 2);
-      } catch (err) {
-        resultDiv.textContent = 'Error fetching report.';
+        resultDiv.textContent = 'Upload failed.';
         console.error(err);
       }
     });
   </script>
+
 </body>
 </html>
 
