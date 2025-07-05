@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Receipt</title>
+</head>
+<body>
+  <h1>Upload CSV or Image Receipt</h1>
+  <form id="uploadForm" enctype="multipart/form-data" method="post" action="/api/receipts/upload">
+    <input type="file" name="file" required />
+    <button type="submit">Upload</button>
+  </form>
+  <div id="response"></div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const responseDiv = document.getElementById('response');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      try {
+        const res = await fetch('/api/receipts/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+        responseDiv.innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        responseDiv.innerText = 'Error uploading file';
+      }
+    });
+  </script>
+</body>
+</html>
+

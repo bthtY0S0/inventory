@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV Inventory Uploader</title>
+</head>
+<body>
+  <h2>Upload Store Receipt (CSV)</h2>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".csv" required />
+    <button type="submit">Upload CSV</button>
+  </form>
+
+  <pre id="result" style="margin-top: 20px; background: #f0f0f0; padding: 10px;"></pre>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const result = document.getElementById('result');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      try {
+        const res = await fetch('http://localhost:10000/api/receipts/csv-upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const json = await res.json();
+        result.textContent = JSON.stringify(json, null, 2);
+      } catch (err) {
+        result.textContent = 'Upload failed: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
+
