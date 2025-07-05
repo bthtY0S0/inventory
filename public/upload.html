@@ -3,33 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Upload Receipt</title>
+  <title>SmartInventory</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    button, input[type="file"] {
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+    }
+    #result {
+      margin-top: 2rem;
+      white-space: pre-wrap;
+      background: #fff;
+      padding: 1rem;
+      border: 1px solid #ccc;
+    }
+  </style>
 </head>
 <body>
-  <h1>Upload CSV or Image Receipt</h1>
-  <form id="uploadForm" enctype="multipart/form-data" method="post" action="/api/receipts/upload">
-    <input type="file" name="file" required />
+  <h1>SmartInventory</h1>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label><strong>Upload CSV file</strong></label><br>
+    <input type="file" name="file" id="csvFile" accept=".csv" required />
+    <br>
     <button type="submit">Upload</button>
   </form>
-  <div id="response"></div>
+
+  <br><br>
+
+  <button id="reportBtn">Get Inventory Report</button>
+
+  <div id="result"></div>
 
   <script>
-    const form = document.getElementById('uploadForm');
-    const responseDiv = document.getElementById('response');
+    const uploadForm = document.getElementById('uploadForm');
+    const csvFileInput = document.getElementById('csvFile');
+    const reportBtn = document.getElementById('reportBtn');
+    const resultDiv = document.getElementById('result');
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const formData = new FormData(form);
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = csvFileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      resultDiv.textContent = 'Uploading...';
+
       try {
         const res = await fetch('/api/receipts/upload', {
           method: 'POST',
           body: formData,
         });
-
         const data = await res.json();
-        responseDiv.innerText = JSON.stringify(data, null, 2);
+        resultDiv.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
-        responseDiv.innerText = 'Error uploading file';
+        resultDiv.textContent = 'Error uploading file.';
+        console.error(err);
+      }
+    });
+
+    reportBtn.addEventListener('click', async () => {
+      resultDiv.textContent = 'Loading report...';
+
+      try {
+        const res = await fetch('/api/inventory/export');
+        const data = await res.json();
+        resultDiv.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        resultDiv.textContent = 'Error fetching report.';
+        console.error(err);
       }
     });
   </script>
