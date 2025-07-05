@@ -1,69 +1,66 @@
-const Tesseract = require('tesseract.js');
 const fs = require('fs');
 const path = require('path');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-const { uploadCSVData } = require('./csvUploadController');
+const csv = require('csv-parser');
+const CentralInventory = require('../models/CentralInventory');
 
-exports.uploadUnified = async (req, res) => {
+function parseCSVFile(filePath) {
+  return new Promise((resolve, reject) => {
+    const rows = [];
+
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on('data', (row) => rows.push(row))
+      .on('end', () => resolve(rows))
+      .on('error', (err) => reject(err));
+  });
+}
+
+async function updateInventoryFromRows(rows) {
+  const updatedItems = [];
+
+  for (const row of rows) {
+    const itemCode = row.itemCode?.trim();
+    const quantity = parseInt(row.quantity);
+
+    if (!itemCode || isNaN(quantity)) continue;
+
+    const updated = await CentralInventory.findOneAndUpdate(
+      { itemCode },
+      { $inc: { quantity } },
+      { new: true }
+    );
+
+    if (updated) {
+      updatedItems.push({ itemCode, newQty: updated.quantity });
+    }
+  }
+
+  return updatedItems;
+}
+
+exports.handleUpload = async (req, res) => {
+  const filePath = req.file?.path;
+
+  if (!filePath) {
+    return res.status(400).json({ message: 'No CSV file uploaded.' });
+  }
+
   try {
-    const { originalname, path: tempPath } = req.file;
-
-    // Check file extension
-    const ext = path.extname(originalname).toLowerCase();
-
-    if (ext === '.csv') {
-      // Just hand off to CSV processor directly
-      return await uploadCSVData(req, res);
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext !== '.csv') {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ message: 'Only .csv files are supported.' });
     }
 
-    if (ext === '.jpg' || ext === '.jpeg' || ext === '.png') {
-      // OCR the image and create CSV
-      const { data: { text } } = await Tesseract.recognize(tempPath, 'eng');
+    const rows = await parseCSVFile(filePath);
+    const updatedItems = await updateInventoryFromRows(rows);
 
-      const lines = text.split('\n').filter(l => l.trim().length > 0);
+    fs.unlinkSync(filePath);
 
-      const rows = lines.map(line => {
-        const parts = line.trim().split(/\s{2,}/);
-        return {
-          document_number: parts[0],
-          order_number: parts[1],
-          date_received: parts[2],
-          location_code: parts[3],
-          sku: parts[4],
-          name: parts[5],
-          quantity: parseInt(parts[6]) || 0,
-          unit_cost: parseFloat(parts[7]) || 0
-        };
-      });
-
-      // Save as temporary CSV
-      const csvPath = path.join(__dirname, '../temp/temp_converted.csv');
-      const csvWriter = createCsvWriter({
-        path: csvPath,
-        header: [
-          { id: 'document_number', title: 'document_number' },
-          { id: 'order_number', title: 'order_number' },
-          { id: 'date_received', title: 'date_received' },
-          { id: 'location_code', title: 'location_code' },
-          { id: 'sku', title: 'sku' },
-          { id: 'name', title: 'name' },
-          { id: 'quantity', title: 'quantity' },
-          { id: 'unit_cost', title: 'unit_cost' }
-        ]
-      });
-
-      await csvWriter.writeRecords(rows);
-
-      // Reuse existing CSV upload logic
-      req.file.path = csvPath;
-      return await uploadCSVData(req, res);
-    }
-
-    return res.status(400).json({ message: 'Unsupported file type.' });
-
+    res.json({ message: 'CSV processed and inventory updated.', updatedItems });
   } catch (err) {
-    console.error('Unified Upload Error:', err);
-    res.status(500).json({ message: 'Error processing the uploaded file' });
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    res.status(500).json({ message: 'Processing failed.', error: err.message });
   }
 };
 

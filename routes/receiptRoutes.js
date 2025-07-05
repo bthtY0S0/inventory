@@ -1,14 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
+const upload = require('../middleware/multer');
+const { handleUpload } = require('../controllers/unifiedUploadController');
 
-// Use temp folder to store uploads
-const upload = multer({ dest: path.join(__dirname, '../temp') });
-
-const { uploadUnified } = require('../controllers/unifiedUploadController');
-
-router.post('/upload', upload.single('file'), uploadUnified);
+router.post('/upload', upload.single('file'), handleUpload);
 
 module.exports = router;
 
