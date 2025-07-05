@@ -40,9 +40,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/favicon.ico', (req, res) => res.sendStatus(204));
 
 // Optional root route
-app.get('/', (req, res) => {
-  res.send('SmartInventory API is live');
-});
+//app.get('/', (req, res) => {
+//  res.send('SmartInventory API is live');
+//});
 
 // Routes
 const receiptRoutes = require('./routes/receiptRoutes');
