@@ -32,30 +32,22 @@ exports.handleUpload = async (req, res) => {
 
     const parsedRows = await parseCSVFile(filePath);
     const updatedItems = [];
-    const skippedRows = [];
 
-    for (let i = 0; i < parsedRows.length; i++) {
-      const row = parsedRows[i];
-      const line = i + 2; // assumes line 1 = header row
+    for (const row of parsedRows) {
+      const { storeId, sku, quantity } = row;
 
-      const storeId = row.storeId?.trim();
-      const sku = row.sku?.trim();
-      const quantity = parseInt(row.quantity);
-
-      if (!storeId || !sku || isNaN(quantity)) {
-        skippedRows.push({ line, reason: 'Missing or invalid storeId, sku, or quantity', row });
-        continue;
-      }
+      if (!storeId || !sku || !quantity || isNaN(quantity)) continue;
 
       const logo = isBolsa(sku) ? "Universal" : storeRegions[storeId];
+
       if (!logo) {
-        skippedRows.push({ line, reason: `Unknown storeId '${storeId}'`, row });
+        console.warn(`Skipping unknown storeId: ${storeId}`);
         continue;
       }
 
       const updated = await CentralInventory.findOneAndUpdate(
-        { sku, logo },
-        { $inc: { quantity: -quantity }, last_updated: Date.now() },
+        { sku: sku.trim(), logo },
+        { $inc: { quantity: -parseInt(quantity) }, last_updated: Date.now() },
         { new: true }
       );
 
@@ -66,7 +58,7 @@ exports.handleUpload = async (req, res) => {
           newQty: updated.quantity
         });
       } else {
-        skippedRows.push({ line, reason: `SKU '${sku}' not found in region '${logo}'`, row });
+        console.warn(`No match found for SKU ${sku} at logo ${logo}`);
       }
     }
 
@@ -74,8 +66,7 @@ exports.handleUpload = async (req, res) => {
 
     return res.json({
       message: 'CSV processed and inventory updated.',
-      updatedItems,
-      skippedRows
+      updatedItems
     });
 
   } catch (err) {
