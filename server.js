@@ -18,21 +18,23 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Helmet with explicit, permissive-enough CSP
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https://inventario-3v7f.onrender.com"],
-      objectSrc: ["'none'"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
-      frameAncestors: ["'none'"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https://inventario-3v7f.onrender.com"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        connectSrc: ["'self'"],
+        frameAncestors: ["'none'"]
+      }
     }
-  }
-}));
-
+  })
+);
 // Serve static files (optional, in case you add frontend later)
 app.use(express.static(path.join(__dirname, 'public')));
 
