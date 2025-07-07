@@ -36,14 +36,11 @@ exports.handleUpload = async (req, res) => {
 
     for (let i = 0; i < parsedRows.length; i++) {
       const row = parsedRows[i];
-      const line = i + 2; // assuming header is line 1
+      const line = i + 2; // assumes line 1 = header row
 
-      let storeId = row.storeId?.trim();
+      const storeId = row.storeId?.trim();
       const sku = row.sku?.trim();
       const quantity = parseInt(row.quantity);
-
-      // Pad storeId to 4 digits if needed (e.g., '149' → '0149')
-      storeId = storeId?.padStart(4, '0');
 
       if (!storeId || !sku || isNaN(quantity)) {
         skippedRows.push({ line, reason: 'Missing or invalid storeId, sku, or quantity', row });
