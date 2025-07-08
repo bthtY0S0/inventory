@@ -63,12 +63,13 @@ exports.handleUpload = async (req, res) => {
       );
 
       if (updated) {
-        updatedItems.push({
-          sku: updated.sku,
-          logo: updated.logo,
-          newQty: updated.quantity
-        });
-      } else {
+      updatedItems.push({
+  name: updated.name,
+  sku: updated.sku,
+  logo: updated.logo,
+  newQty: updated.quantity
+});
+} else {
         skippedRows.push({ line, reason: `SKU '${sku}' not found in region '${logo}'`, row });
       }
     }
