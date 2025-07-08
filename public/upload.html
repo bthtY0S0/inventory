@@ -4,71 +4,21 @@
   <meta charset="UTF-8" />
   <title>SmartInventory</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background: #f4f4f4;
-    }
-    button {
-      padding: 1rem 1.5rem;
-      font-size: 1rem;
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 4px;
-      margin-right: 1rem;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    #result {
-      margin-top: 2rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      background: white;
-    }
-    th, td {
-      padding: 0.75rem;
-      text-align: left;
-      border: 1px solid #ccc;
-    }
-    th {
-      background: #eee;
-    }
-    tr.updated {
-      background-color: #e1fbe1;
-    }
-    tr.skipped {
-      background-color: #fff7d6;
-    }
-    .section-title {
-      margin-top: 2rem;
-      font-weight: bold;
-      font-size: 1.1rem;
-    }
-    .message {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: #fff;
-      border: 1px solid #ccc;
-      white-space: pre-wrap;
-    }
-    .status-ok {
-      color: green;
-      font-weight: bold;
-    }
-    .status-warning {
-      color: orange;
-      font-weight: bold;
-    }
-    .status-danger {
-      color: red;
-      font-weight: bold;
-    }
+    body { font-family: sans-serif; padding: 2rem; background: #f4f4f4; }
+    button { padding: 1rem 1.5rem; font-size: 1rem; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; margin-right: 1rem; }
+    button:hover { background: #0056b3; }
+    label { margin-right: 1rem; }
+    #result { margin-top: 2rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; }
+    th, td { padding: 0.75rem; text-align: left; border: 1px solid #ccc; }
+    th { background: #eee; }
+    tr.updated { background-color: #e1fbe1; }
+    tr.skipped { background-color: #fff7d6; }
+    .section-title { margin-top: 2rem; font-weight: bold; font-size: 1.1rem; }
+    .message { margin-top: 1rem; padding: 1rem; background: #fff; border: 1px solid #ccc; white-space: pre-wrap; }
+    .status-ok { color: green; font-weight: bold; }
+    .status-warning { color: orange; font-weight: bold; }
+    .status-danger { color: red; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -78,6 +28,14 @@
   <input type="file" id="fileInput" accept=".csv" style="display: none;" />
   <button id="uploadBtn">Upload CSV</button>
   <button id="downloadBtn">Download Inventory CSV</button>
+
+  <div class="section-title">🔧 Manual Adjustment</div>
+  <form id="manualForm">
+    <label>SKU: <input type="text" id="manualSku" required /></label>
+    <label>Logo: <input type="text" id="manualLogo" required /></label>
+    <label>Quantity (+/-): <input type="number" id="manualQty" required /></label>
+    <button type="submit">Submit</button>
+  </form>
 
   <div id="result"></div>
 
@@ -97,105 +55,16 @@
       resultDiv.innerHTML = '<div class="message">Uploading...</div>';
 
       try {
-        const uploadRes = await fetch('/api/receipts/upload', {
-          method: 'POST',
-          body: formData
-        });
-
+        const uploadRes = await fetch('/api/receipts/upload', { method: 'POST', body: formData });
         const data = await uploadRes.json();
-        resultDiv.innerHTML = '';
-
-        const summary = document.createElement('div');
-        summary.className = 'message';
-        summary.textContent = `✅ ${data.message}`;
-        resultDiv.appendChild(summary);
-
-        if (data.updatedItems?.length) {
-          const updatedTitle = document.createElement('div');
-          updatedTitle.className = 'section-title';
-          updatedTitle.textContent = '🟢 Updated Items';
-          resultDiv.appendChild(updatedTitle);
-
-          const updatedTable = document.createElement('table');
-          updatedTable.innerHTML = `
-            <tr>
-              <th>#</th><th>Name</th><th>Logo</th><th>SKU</th><th>New Qty</th><th>Status</th>
-            </tr>
-          `;
-          data.updatedItems.forEach((item, i) => {
-            const row = document.createElement('tr');
-            row.className = 'updated';
-
-            let statusText = '';
-            let statusClass = '';
-            if (item.newQty <= 25) {
-              statusText = '🔴 Reorder Now';
-              statusClass = 'status-danger';
-            } else if (item.newQty <= 30) {
-              statusText = '🟠 Low Stock';
-              statusClass = 'status-warning';
-            } else {
-              statusText = '🟢 OK';
-              statusClass = 'status-ok';
-            }
-
-            row.innerHTML = `
-              <td>${i + 1}</td>
-              <td>${item.name}</td>
-              <td>${item.logo}</td>
-              <td>${item.sku}</td>
-              <td>${item.newQty}</td>
-              <td class="${statusClass}">${statusText}</td>
-            `;
-            updatedTable.appendChild(row);
-          });
-          resultDiv.appendChild(updatedTable);
-        }
-
-        if (data.skippedRows?.length) {
-          const skippedTitle = document.createElement('div');
-          skippedTitle.className = 'section-title';
-          skippedTitle.textContent = '⚠️ Skipped Rows';
-          resultDiv.appendChild(skippedTitle);
-
-          const skippedTable = document.createElement('table');
-          skippedTable.innerHTML = `
-            <tr><th>#</th><th>Line</th><th>Reason</th></tr>
-          `;
-          data.skippedRows.forEach((row, i) => {
-            const tr = document.createElement('tr');
-            tr.className = 'skipped';
-            tr.innerHTML = `
-              <td>${i + 1}</td>
-              <td>${row.line}</td>
-              <td>${row.reason}</td>
-            `;
-            skippedTable.appendChild(tr);
-          });
-          resultDiv.appendChild(skippedTable);
-        }
-
-        // Auto-download CSV as before
-        const csvRes = await fetch('/api/inventory/export-csv');
-        const blob = await csvRes.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'SmartInventory.csv';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-
+        resultDiv.innerHTML = `<div class="message">✅ ${data.message}</div>`;
+        displayReport();
       } catch (err) {
         resultDiv.innerHTML = '<div class="message">❌ Upload failed.</div>';
-        console.error(err);
       }
     });
 
-    // 🔁 Reuse report logic for "Download Inventory CSV" button
     document.getElementById('downloadBtn').addEventListener('click', async () => {
-      // Trigger download
       const csvRes = await fetch('/api/inventory/export-csv');
       const blob = await csvRes.blob();
       const url = window.URL.createObjectURL(blob);
@@ -206,58 +75,59 @@
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+      displayReport();
+    });
 
-      // Fetch and display full inventory as a color-coded report
-      resultDiv.innerHTML = '<div class="message">Loading report...</div>';
+    async function displayReport() {
+      resultDiv.innerHTML += '<div class="message">Loading report...</div>';
+      const res = await fetch('/api/inventory/report');
+      const { items } = await res.json();
+      const table = document.createElement('table');
+      table.innerHTML = `<tr><th>#</th><th>Name</th><th>Logo</th><th>SKU</th><th>Qty</th><th>Status</th></tr>`;
+      items.forEach((item, i) => {
+        const tr = document.createElement('tr');
+        let statusText = '', statusClass = '';
+        if (item.quantity <= 25) {
+          statusText = '🔴 Reorder Now'; statusClass = 'status-danger';
+        } else if (item.quantity <= 30) {
+          statusText = '🟠 Low Stock'; statusClass = 'status-warning';
+        } else {
+          statusText = '🟢 OK'; statusClass = 'status-ok';
+        }
+        tr.className = 'updated';
+        tr.innerHTML = `<td>${i + 1}</td><td>${item.name}</td><td>${item.logo}</td><td>${item.sku}</td><td>${item.quantity}</td><td class="${statusClass}">${statusText}</td>`;
+        table.appendChild(tr);
+      });
+      resultDiv.appendChild(table);
+    }
+
+    document.getElementById('manualForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const sku = document.getElementById('manualSku').value.trim();
+      const logo = document.getElementById('manualLogo').value.trim();
+      const quantity = parseInt(document.getElementById('manualQty').value);
+
+      if (!sku || !logo || isNaN(quantity)) {
+        resultDiv.innerHTML = '<div class="message">❌ Invalid manual entry.</div>';
+        return;
+      }
+
       try {
-        const res = await fetch('/api/inventory/report');
-        const { items } = await res.json();
-
-        resultDiv.innerHTML = '';
-        const title = document.createElement('div');
-        title.className = 'section-title';
-        title.textContent = '📊 Current Inventory Report';
-        resultDiv.appendChild(title);
-
-        const table = document.createElement('table');
-        table.innerHTML = `
-          <tr>
-            <th>#</th><th>Name</th><th>Logo</th><th>SKU</th><th>Qty</th><th>Status</th>
-          </tr>
-        `;
-
-        items.forEach((item, i) => {
-          const tr = document.createElement('tr');
-
-          let statusText = '';
-          let statusClass = '';
-          if (item.quantity <= 25) {
-            statusText = '🔴 Reorder Now';
-            statusClass = 'status-danger';
-          } else if (item.quantity <= 30) {
-            statusText = '🟠 Low Stock';
-            statusClass = 'status-warning';
-          } else {
-            statusText = '🟢 OK';
-            statusClass = 'status-ok';
-          }
-
-          tr.className = 'updated';
-          tr.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${item.name}</td>
-            <td>${item.logo}</td>
-            <td>${item.sku}</td>
-            <td>${item.quantity}</td>
-            <td class="${statusClass}">${statusText}</td>
-          `;
-          table.appendChild(tr);
+        const res = await fetch('/api/inventory/adjust', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sku, logo, quantity })
         });
 
-        resultDiv.appendChild(table);
+        const data = await res.json();
+        if (!res.ok) {
+          resultDiv.innerHTML = `<div class="message">⚠️ ${data.message}</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="message">✅ ${data.message}\n${data.updatedItem.name} (${data.updatedItem.logo}) now has ${data.updatedItem.newQty} units.</div>`;
+          displayReport();
+        }
       } catch (err) {
-        resultDiv.innerHTML = '<div class="message">❌ Failed to load report.</div>';
-        console.error(err);
+        resultDiv.innerHTML = '<div class="message">❌ Request failed.</div>';
       }
     });
   </script>
