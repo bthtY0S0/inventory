@@ -4,7 +4,6 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 const helmet = require('helmet');
-const inventoryRoutes = require('./routes/centralInventoryRoutes');
 // Load env variables
 dotenv.config();
 
@@ -16,7 +15,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/api/inventory', inventoryRoutes);
 
 // Helmet with explicit, permissive-enough CSP
 app.use(
@@ -50,7 +48,6 @@ app.use('/favicon.ico', (req, res) => res.sendStatus(204));
 // Routes
 const receiptRoutes = require('./routes/receiptRoutes');
 const inventoryRoutes = require('./routes/centralInventoryRoutes');
-
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.get('/', (req, res) => {
