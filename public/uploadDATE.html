@@ -59,20 +59,6 @@
         const data = await uploadRes.json();
         resultDiv.innerHTML = `<div class="message">✅ ${data.message}</div>`;
         displayReport();
-
-        // Download CSV with date
-        const csvRes = await fetch('/api/inventory/export-csv');
-        const blob = await csvRes.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        const today = new Date().toISOString().split('T')[0];
-        link.download = `SmartInventory_${today}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-
       } catch (err) {
         resultDiv.innerHTML = '<div class="message">❌ Upload failed.</div>';
       }
@@ -84,8 +70,7 @@
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const today = new Date().toISOString().split('T')[0];
-      link.download = `SmartInventory_${today}.csv`;
+      link.download = 'SmartInventory.csv';
       document.body.appendChild(link);
       link.click();
       link.remove();
