@@ -31,26 +31,8 @@
 
   <div class="section-title">🔧 Manual Adjustment</div>
   <form id="manualForm">
-    <label>SKU:
-      <select id="manualSku" required>
-        <option value="2400768">2400768 - Visera Sport</option>
-        <option value="2400762">2400762 - Gorra Gabardina</option>
-        <option value="2400767">2400767 - Visera Velcro XL</option>
-        <option value="2400771">2400771 - Sombrero Legionario</option>
-        <option value="2400764">2400764 - Sombrero Australiano</option>
-        <option value="2400766">2400766 - Visera Clip Grande</option>
-        <option value="2400761">2400761 - Bolsa Ovalada de Playa</option>
-        <option value="2400760">2400760 - Bolsa Cuadrada de Playa</option>
-      </select>
-    </label>
-    <label>Logo:
-      <select id="manualLogo" required>
-        <option value="Cancun">Cancun</option>
-        <option value="Riviera Maya">Riviera Maya</option>
-        <option value="Tulum">Tulum</option>
-        <option value="Universal">Universal</option>
-      </select>
-    </label>
+    <label>SKU: <input type="text" id="manualSku" required /></label>
+    <label>Logo: <input type="text" id="manualLogo" required /></label>
     <label>Quantity (+/-): <input type="number" id="manualQty" required /></label>
     <button type="submit">Submit</button>
   </form>
@@ -61,14 +43,6 @@
     const fileInput = document.getElementById('fileInput');
     const uploadBtn = document.getElementById('uploadBtn');
     const resultDiv = document.getElementById('result');
-
-    function getFormattedDate() {
-      const d = new Date();
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${day}-${month}-${year}`;
-    }
 
     uploadBtn.addEventListener('click', () => fileInput.click());
 
@@ -86,12 +60,14 @@
         resultDiv.innerHTML = `<div class="message">✅ ${data.message}</div>`;
         displayReport();
 
+        // Download CSV with date
         const csvRes = await fetch('/api/inventory/export-csv');
         const blob = await csvRes.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `SmartInventory_${getFormattedDate()}.csv`;
+        const today = new Date().toISOString().split('T')[0];
+        link.download = `SmartInventory_${today}.csv`;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -108,7 +84,8 @@
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `SmartInventory_${getFormattedDate()}.csv`;
+      const today = new Date().toISOString().split('T')[0];
+      link.download = `SmartInventory_${today}.csv`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -141,8 +118,8 @@
 
     document.getElementById('manualForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const sku = document.getElementById('manualSku').value;
-      const logo = document.getElementById('manualLogo').value;
+      const sku = document.getElementById('manualSku').value.trim();
+      const logo = document.getElementById('manualLogo').value.trim();
       const quantity = parseInt(document.getElementById('manualQty').value);
 
       if (!sku || !logo || isNaN(quantity)) {
